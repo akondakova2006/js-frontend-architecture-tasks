@@ -41,5 +41,100 @@ const validate = (fields) => {
 };
 
 // BEGIN
+export default () => {
+  const form = document.querySelector('form');
+  const submitButton = document.querySelector('[type="submit"]');
 
+  const nameInput = document.querySelector('[name="name"]');
+  const emailInput = document.querySelector('[name="email"]');
+  const passwordInput = document.querySelector('[name="password"]');
+  const passwordConfirmInput = document.querySelector('[name="passwordConfirmation"]');
+
+  const state = {
+    name: '',
+    email: '',
+    password: '',
+    passwordConfirmation: '',
+  };
+
+  const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
+  const validatePassword = (password) => password.length >= 6;
+  const validatePasswordConfirmation = (password, confirm) => password === confirm;
+
+  const updateSubmitState = () => {
+    const isValid =
+      state.name.length > 0 &&
+      validateEmail(state.email) &&
+      validatePassword(state.password) &&
+      validatePasswordConfirmation(state.password, state.passwordConfirmation);
+
+    submitButton.disabled = !isValid;
+  };
+
+  const renderError = (input, message, condition) => {
+    const existing = input.parentNode.querySelector(`.${input.name}-error`);
+
+    if (condition) {
+      input.classList.add('is-invalid');
+
+      if (!existing) {
+        const el = document.createElement('div');
+        el.classList.add(`${input.name}-error`);
+        el.textContent = message;
+        input.after(el);
+      }
+    } else {
+      input.classList.remove('is-invalid');
+
+      if (existing) {
+        existing.remove();
+      }
+    }
+  };
+
+  const showErrors = () => {
+    renderError(
+      emailInput,
+      'email must be a valid email',
+      state.email && !validateEmail(state.email),
+    );
+
+    renderError(
+      passwordInput,
+      'password must be at least 6 characters',
+      state.password && !validatePassword(state.password),
+    );
+
+    renderError(
+      passwordConfirmInput,
+      'Password confirmation does not match to password',
+      state.passwordConfirmation &&
+        !validatePasswordConfirmation(state.password, state.passwordConfirmation),
+    );
+  };
+
+  const render = () => {
+    showErrors();
+    updateSubmitState();
+  };
+
+  const onInput = (e) => {
+    state[e.target.name] = e.target.value;
+    render();
+  };
+
+  form.addEventListener('input', onInput);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const response = await axios.post('/users', state);
+
+    if (response.status === 200) {
+      document.body.textContent = 'User Created';
+    }
+  });
+
+  render();
+};
 // END
